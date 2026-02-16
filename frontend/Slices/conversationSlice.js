@@ -1,5 +1,9 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+import {
+  joinConversation,
+  joinNewConversation,
+} from "../socketio client/socketClient";
 const API_URL = `http://localhost:8000/${
   import.meta.env.VITE_API
 }/conversations/`;
@@ -10,6 +14,7 @@ const initialState = {
   isSuccess: false,
   isLoading: false,
   message: "",
+  currentConversation: {},
 };
 
 export const getConversations = createAsyncThunk(
@@ -38,7 +43,7 @@ export const getConversations = createAsyncThunk(
 
 export const addConversation = createAsyncThunk(
   "converastion/create",
-  async (email, thunkAPI) => {
+  async (data, thunkAPI) => {
     try {
       const token = thunkAPI.getState().auth.accessToken;
       const config = {
@@ -47,7 +52,7 @@ export const addConversation = createAsyncThunk(
           withCredentials: true,
         },
       };
-      const resp = await axios.post(API_URL, email, config);
+      const resp = await axios.post(API_URL, data, config);
       return resp.data;
     } catch (error) {
       const message =
@@ -61,16 +66,18 @@ export const addConversation = createAsyncThunk(
   }
 );
 
-export const taskSlice = createSlice({
+export const converastionSlice = createSlice({
   name: "conversation",
   initialState,
   reducers: {
     reset: (state) => initialState,
     updateConversationOnNewMessage: (state, action) => {
-      const { conversationId, message } = action.payload;
+      const message = action.payload;
+      const conversationId = message.conversationId;
       const index = state.conversations.findIndex(
         (conversation) => conversation._id == conversationId
       );
+      console.log(index);
       if (index != -1) {
         state.conversations[index].lastMessage.sentAt = message.createdAt;
         state.conversations[index].lastMessage.senderId = message.senderId;
@@ -80,6 +87,12 @@ export const taskSlice = createSlice({
         state.conversations.splice(index, 1);
         state.conversations.unshift(tmpConversation);
       }
+    },
+    setCurrentConversation: (state, action) => {
+      state.currentConversation = action.payload;
+    },
+    addConversationToUi: (state, action) => {
+      state.conversations.unshift(action.payload);
     },
   },
   extraReducers: (builder) => {
@@ -92,7 +105,7 @@ export const taskSlice = createSlice({
         state.isSuccess = true;
         state.isLoading = false;
         state.isError = false;
-        state.conversations.push(action.payload);
+        state.conversations = action.payload;
       })
       .addCase(getConversations.rejected, (state, action) => {
         state.isError = true;
@@ -108,6 +121,8 @@ export const taskSlice = createSlice({
         state.isLoading = false;
         state.isError = false;
         state.conversations.unshift(action.payload);
+        joinConversation(action.payload._id);
+        joinNewConversation(action.payload);
       })
       .addCase(addConversation.rejected, (state, action) => {
         state.isError = true;
@@ -118,5 +133,10 @@ export const taskSlice = createSlice({
   },
 });
 
-export const { reset } = taskSlice.actions;
-export default taskSlice.reducer;
+export const {
+  reset,
+  updateConversationOnNewMessage,
+  setCurrentConversation,
+  addConversationToUi,
+} = converastionSlice.actions;
+export default converastionSlice.reducer;

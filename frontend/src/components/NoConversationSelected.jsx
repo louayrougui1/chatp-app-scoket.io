@@ -1,5 +1,11 @@
 const NoConversationSelected = () => {
-  return <div>NoConversationSelected</div>;
+  return (
+    <div className="flex-1 flex items-center justify-center bg-gray-50 min-h-0">
+      <p className="text-gray-400 text-lg font-medium">
+        No conversation selected
+      </p>
+    </div>
+  );
 };
 
 export default NoConversationSelected;

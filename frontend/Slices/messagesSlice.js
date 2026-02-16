@@ -1,5 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { socketSendMessage } from "../socketio client/socketClient";
 import axios from "axios";
+import { updateConversationOnNewMessage } from "./conversationSlice";
 const API_URL = `http://localhost:8000/${import.meta.env.VITE_API}/messages/`;
 
 const initialState = {
@@ -45,7 +47,11 @@ export const sendMessage = createAsyncThunk(
           withCredentials: true,
         },
       };
-      const resp = await axios.post(API_URL + message.conversationId, config);
+      const resp = await axios.post(
+        API_URL + message.conversationId,
+        { text: message.text },
+        config
+      );
       return resp.data;
     } catch (error) {
       const message =
@@ -134,17 +140,18 @@ export const deleteMessage = createAsyncThunk(
 //   }
 // );
 
-export const taskSlice = createSlice({
+export const messageSlice = createSlice({
   name: "message",
   initialState,
   reducers: {
     reset: (state) => initialState,
     addMessage: (state, action) => {
-      const { conversationId, message } = action.payload;
-      if (!state.messagesByConversation[conversationId]) {
-        state.messagesByConversation[conversationId] = [];
+      const message = action.payload;
+
+      if (!state.messagesByConversation[message.conversationId]) {
+        state.messagesByConversation[message.conversationId] = [];
       }
-      state.messagesByConversation[conversationId].push(message);
+      state.messagesByConversation[message.conversationId].push(message);
     },
   },
   extraReducers: (builder) => {
@@ -157,10 +164,8 @@ export const taskSlice = createSlice({
         state.isSuccess = true;
         state.isLoading = false;
         state.isError = false;
-        if (!state.messagesByConversation[conversationId]) {
-          state.messagesByConversation[conversationId] = [];
-        }
-        state.messagesByConversation[conversationId].push(messages);
+
+        state.messagesByConversation[conversationId] = messages;
       })
       .addCase(getMessages.rejected, (state, action) => {
         state.isError = true;
@@ -172,11 +177,14 @@ export const taskSlice = createSlice({
         state.isLoading = true;
       })
       .addCase(sendMessage.fulfilled, (state, action) => {
-        const { message } = action.payload;
+        const sentMessage = action.payload;
         state.isSuccess = true;
         state.isLoading = false;
         state.isError = false;
-        state.messagesByConversation[message.conversationId].push(message);
+        state.messagesByConversation[sentMessage.conversationId].push(
+          sentMessage
+        );
+        socketSendMessage(sentMessage);
       })
       .addCase(sendMessage.rejected, (state, action) => {
         state.isError = true;
@@ -211,5 +219,5 @@ export const taskSlice = createSlice({
   },
 });
 
-export const { reset, addMessage } = taskSlice.actions;
-export default taskSlice.reducer;
+export const { reset, addMessage } = messageSlice.actions;
+export default messageSlice.reducer;

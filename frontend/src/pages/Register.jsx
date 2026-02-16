@@ -25,7 +25,7 @@ const Register = () => {
       console.log(message);
     }
     if (user || isSuccess) {
-      navigate("/123");
+      navigate("/conversations");
     }
     return () => {
       dispatch(reset());
@@ -138,7 +138,7 @@ const Register = () => {
             <CardDescription>
               <div className="text-sm text-center">
                 Already have an account?{" "}
-                <Link to="/login" className="text-black  m-1 font-bold">
+                <Link to="/" className="text-black  m-1 font-bold">
                   Login
                 </Link>
               </div>

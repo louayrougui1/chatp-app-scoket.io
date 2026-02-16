@@ -26,7 +26,6 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   if (user) {
-    //user.friendCode = user._id.toString().slice(-6);
     const accessToken = generateAccessToken(user._id);
     setCookie(res, user._id);
     res.status(201).json({

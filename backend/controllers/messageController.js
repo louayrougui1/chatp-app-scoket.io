@@ -4,14 +4,15 @@ const asyncHandler = require("express-async-handler");
 
 const getMessages = asyncHandler(async (req, res) => {
   const conversationId = req.params.conversationId;
-  const conversation = await conversation.findById(conversationId);
-  if (!conversation) {
+  const conversationExists = await conversation.findById(conversationId);
+  if (!conversationExists) {
     res.status(404);
     throw new Error("Conversation not found");
   }
   const messages = await message
     .find({ conversationId: conversationId })
-    .sort({ createAt: 1 });
+    .sort({ createdAt: 1 })
+    .populate("senderId", "name");
   res.status(200).json(messages);
 });
 
@@ -26,7 +27,7 @@ const sendMessage = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error("please provide a text field in the message");
   }
-  const message = await message.create({
+  const newMessage = await message.create({
     senderId: req.user._id,
     text: text,
     conversationId: conversationId,
@@ -36,7 +37,7 @@ const sendMessage = asyncHandler(async (req, res) => {
     throw new Error("problem occured when saving the new message");
   }
   const updatedLastMessage = {
-    sentAt: message.createdAt,
+    sentAt: newMessage.createdAt,
     senderId: req.user._id,
     text: text,
   };
@@ -45,7 +46,8 @@ const sendMessage = asyncHandler(async (req, res) => {
     { lastMessage: updatedLastMessage },
     { new: true }
   );
-  res.status(201).json(message);
+  const sentMessage = await newMessage.populate("senderId", "name");
+  res.status(201).json(sentMessage);
 });
 
 // const updatemessage = asyncHandler(async (req, res) => {

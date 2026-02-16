@@ -5,7 +5,7 @@ const conversationSchema = new mongoose.Schema(
     usersList: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+        ref: "users",
       },
     ],
     isGroup: {

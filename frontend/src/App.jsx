@@ -34,7 +34,7 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route path=":conversationID" element={<Conversations />} />
+          <Route path=":conversationId" element={<Conversations />} />
           <Route index element={<NoConversationSelected />} />
         </Route>
 
